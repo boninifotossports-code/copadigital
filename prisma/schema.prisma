@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Perfis de Usuários (Integrado ao NextAuth)
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role           @default(GESTOR)
+  organizations Organization[] // Relação: Um usuário pode ter várias organizações
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum Role {
+  SUPER_ADMIN
+  GESTOR
+  ARBITRO
+  EQUIPE
+}
+
+// Organizações (A gestão com a rota /nomedagestao)
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique // ex: liga-carioca
+  logoUrl      String?
+  planStatus   PlanStatus    @default(TRIAL)
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id])
+  competitions Competition[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum PlanStatus {
+  TRIAL
+  ACTIVE
+  INACTIVE
+}
+
+// Competições
+model Competition {
+  id             String       @id @default(cuid())
+  name           String
+  status         CompStatus   @default(DRAFT)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum CompStatus {
+  DRAFT
+  REGISTRATION
+  ACTIVE
+  FINISHED
+}
